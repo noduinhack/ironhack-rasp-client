@@ -4,6 +4,9 @@ const http = require('http');
 const app = express();
 const server = http.createServer(app);
 const path = require('path');
+var io = require('socket.io')(server);
+
+
 //let speed = 255
 let speed = [216, 255]
 
@@ -20,6 +23,80 @@ var exec = require('child_process').exec;
 var socket = require('socket.io-client')(process.env.REMOTE);
 console.log(process.env.REMOTE)
 
+const moveRobot = msg => {
+  switch (msg) {
+
+    case 38:
+      console.log("Hacia adelante")
+      var configs = five.Motor.SHIELD_CONFIGS.ARDUINO_MOTOR_SHIELD_R3_1;
+      //Motor B es el derecho
+      var motorA = new five.Motor(configs.A);
+      var motorB = new five.Motor(configs.B);
+      motorB.forward(speed[1])
+      motorA.forward(speed[0])
+
+      //res.json({ distancia: "distancia" })
+      break
+    case 40:
+
+      console.log("Hacia detras")
+      var configs = five.Motor.SHIELD_CONFIGS.ARDUINO_MOTOR_SHIELD_R3_1;
+
+      var motorA = new five.Motor(configs.A);
+      var motorB = new five.Motor(configs.B);
+
+      motorA.reverse(speed[0])
+      motorB.reverse(speed[1])
+
+      //res.json({ distancia: "distancia" })
+
+      break
+    case 37:
+
+      var configs = five.Motor.SHIELD_CONFIGS.ARDUINO_MOTOR_SHIELD_R3_1;
+
+      var motorA = new five.Motor(configs.A);
+      var motorB = new five.Motor(configs.B);
+
+      motorB.forward(speed[1])
+      motorA.reverse(speed[0])
+      //res.json({ distancia: "distancia" })
+
+
+      break;
+    case 39:
+      var configs = five.Motor.SHIELD_CONFIGS.ARDUINO_MOTOR_SHIELD_R3_1;
+
+      var motorA = new five.Motor(configs.A);
+      var motorB = new five.Motor(configs.B);
+
+      motorA.forward(speed[0])
+      motorB.reverse(speed[1])
+      //res.json({ distancia: "distancia" })
+
+      break;
+    case 90:
+      servo.to(0)
+      break
+    case 88:
+      servo.to(180)
+      break
+
+    case "stop":
+      var configs = five.Motor.SHIELD_CONFIGS.ARDUINO_MOTOR_SHIELD_R3_1;
+
+      var motorA = new five.Motor(configs.A);
+      var motorB = new five.Motor(configs.B);
+
+      motorA.stop()
+      motorB.stop()
+      //res.json({ distancia: "distancia" })
+      break
+    default:
+      break
+  }
+}
+
 console.log("antes de conectar")
 socket.on('connect', function () {
 
@@ -32,6 +109,12 @@ socket.on('connect', function () {
     setTimeout(() => { socket.emit('board ready', boardConnected); }, 2000)
 
     socket.emit("local ip", internalIp.v4.sync())
+
+    io.on('connection', function(socket){
+      socket.on('keypress', function(msg){
+        moveRobot(msg)
+      })
+    });
 
     socket.on("speed update", msg => {
       console.log(msg)
@@ -117,77 +200,7 @@ socket.on('connect', function () {
 
     socket.on("keypress", msg => {
       console.log(msg)
-      switch (msg) {
-
-        case 38:
-          console.log("Hacia adelante")
-          var configs = five.Motor.SHIELD_CONFIGS.ARDUINO_MOTOR_SHIELD_R3_1;
-          //Motor B es el derecho
-          var motorA = new five.Motor(configs.A);
-          var motorB = new five.Motor(configs.B);
-          motorB.forward(speed[1])
-          motorA.forward(speed[0])
-
-          //res.json({ distancia: "distancia" })
-          break
-        case 40:
-
-          console.log("Hacia detras")
-          var configs = five.Motor.SHIELD_CONFIGS.ARDUINO_MOTOR_SHIELD_R3_1;
-
-          var motorA = new five.Motor(configs.A);
-          var motorB = new five.Motor(configs.B);
-
-          motorA.reverse(speed[0])
-          motorB.reverse(speed[1])
-
-          //res.json({ distancia: "distancia" })
-
-          break
-        case 37:
-
-          var configs = five.Motor.SHIELD_CONFIGS.ARDUINO_MOTOR_SHIELD_R3_1;
-
-          var motorA = new five.Motor(configs.A);
-          var motorB = new five.Motor(configs.B);
-
-          motorB.forward(speed[1])
-          motorA.reverse(speed[0])
-          //res.json({ distancia: "distancia" })
-
-
-          break;
-        case 39:
-          var configs = five.Motor.SHIELD_CONFIGS.ARDUINO_MOTOR_SHIELD_R3_1;
-
-          var motorA = new five.Motor(configs.A);
-          var motorB = new five.Motor(configs.B);
-
-          motorA.forward(speed[0])
-          motorB.reverse(speed[1])
-          //res.json({ distancia: "distancia" })
-
-          break;
-        case 90:
-          servo.to(0)
-          break
-        case 88:
-          servo.to(180)
-          break
-
-        case "stop":
-          var configs = five.Motor.SHIELD_CONFIGS.ARDUINO_MOTOR_SHIELD_R3_1;
-
-          var motorA = new five.Motor(configs.A);
-          var motorB = new five.Motor(configs.B);
-
-          motorA.stop()
-          motorB.stop()
-          //res.json({ distancia: "distancia" })
-          break
-        default:
-          break
-      }
+      moveRobot(msg)
       detectMetal()
     })
   })
